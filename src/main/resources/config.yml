@@ -1,0 +1,20 @@
+# StopSpam Configuration
+
+# Minimum time (in milliseconds) between messages
+message-cooldown: 250
+
+# Warning message shown to spammers
+warning-messages:
+  - "Shut the fuck up."
+  - "Stop spamming you nerd."
+  - "Shut up."
+  - "Message throttled. Shut up."
+  - "Stop spamming."
+
+# Timeout durations (in seconds) for repeated violations
+timeouts:
+  first: 10
+  second: 30
+  third: 60
+  fourth: 300  # 5 minutes
+  fifth: 1800  # 30 minutes

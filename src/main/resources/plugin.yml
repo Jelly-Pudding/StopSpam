@@ -1,0 +1,15 @@
+name: StopSpam
+version: '1.0-SNAPSHOT'
+main: com.jellypudding.stopSpam.StopSpam
+api-version: '1.21'
+description: "Prevents chat spam by rate limiting messages with escalating timeouts"
+author: AlphaAlex115
+commands:
+  stopspam:
+    description: "StopSpam management commands"
+    usage: "/stopspam reload"
+    aliases: [ss]
+permissions:
+  stopspam.admin:
+    description: "Allows use of StopSpam admin commands"
+    default: op
