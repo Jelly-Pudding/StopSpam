@@ -1,20 +1,39 @@
 # StopSpam Configuration
 
 # Minimum time (in milliseconds) between messages
-message-cooldown: 250
+message-cooldown: 280
+
+# Message similarity detection
+similarity:
+  enabled: true
+  # Threshold (0.0-1.0) - higher means more similar messages will be blocked
+  # 0.9 means 90% similar content will trigger spam detection
+  threshold: 0.9
+  # Number of recent messages to check for similarity
+  recent-messages-to-check: 15
+  # Only check messages within this time window (in seconds)
+  time-window: 20
+  # Number of similar messages required before triggering spam detection
+  repetition-threshold: 4
 
 # Warning message shown to spammers
 warning-messages:
-  - "Shut the fuck up."
-  - "Stop spamming you nerd."
-  - "Shut up."
-  - "Message throttled. Shut up."
-  - "Stop spamming."
+  - "Silence is a virtue"
+  - "Even a fool who keeps silent is considered wise."
+  - "Speak only if it improves upon the silence."
+  - "Brevity is the soul of wit."
+  - "Wise men speak because they have something to say; fools speak because they have to say something."
+  - "If you have nothing to say, say nothing."
+  - "The more you say, the less people remember."
+  - "You must be the other cat."
 
 # Timeout durations (in seconds) for repeated violations
 timeouts:
   first: 10
-  second: 30
-  third: 60
-  fourth: 300  # 5 minutes
-  fifth: 1800  # 30 minutes
+  second: 20
+  third: 30
+  fourth: 100
+  fifth: 300
+  sixth: 600
+  seventh: 1200
+  eighth: 1800
