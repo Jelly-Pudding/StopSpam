@@ -199,7 +199,7 @@ public final class StopSpam extends JavaPlugin implements Listener {
         player.sendMessage(Component.text(message, NamedTextColor.RED));
     }
 
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.LOWEST)
     public void onPlayerChat(AsyncChatEvent event) {
         Player player = event.getPlayer();
         UUID playerId = player.getUniqueId();
