@@ -3,6 +3,14 @@
 # Minimum time (in milliseconds) between messages
 message-cooldown: 280
 
+# Rate limit - prevents sending too many messages in a short time
+rate-limit:
+  enabled: true
+  # Maximum number of messages allowed within the time window
+  max-messages: 9
+  # Time window in seconds
+  time-window: 5
+
 # Message similarity detection
 similarity:
   enabled: true
@@ -12,7 +20,7 @@ similarity:
   # Number of recent messages to check for similarity
   recent-messages-to-check: 15
   # Only check messages within this time window (in seconds)
-  time-window: 20
+  time-window: 80
   # Number of similar messages required before triggering spam detection
   repetition-threshold: 4
 

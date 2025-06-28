@@ -1,14 +1,17 @@
 name: StopSpam
-version: '1.0'
+version: '1.1'
 main: com.jellypudding.stopSpam.StopSpam
 api-version: '1.21'
 description: "Prevents chat spam by rate limiting messages with escalating timeouts"
 author: AlphaAlex115
+website: www.minecraftoffline.net
 commands:
   stopspam:
     description: "StopSpam management commands"
     usage: "/stopspam reload"
     aliases: [ss]
+    permission: stopspam.admin
+    permission-message: "You do not have permission to use StopSpam."
 permissions:
   stopspam.admin:
     description: "Allows use of StopSpam admin commands"

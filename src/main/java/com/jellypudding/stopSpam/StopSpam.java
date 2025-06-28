@@ -30,6 +30,9 @@ public final class StopSpam extends JavaPlugin implements Listener {
     private int recentMessagesToCheck;
     private int similarityTimeWindow;
     private int repetitionThreshold;
+    private boolean rateLimitEnabled;
+    private int rateLimitMaxMessages;
+    private int rateLimitTimeWindow;
 
     // Class to store message with timestamp
     private static class MessageEntry {
@@ -77,10 +80,14 @@ public final class StopSpam extends JavaPlugin implements Listener {
             warningMessages = Collections.singletonList("Please slow down your messages!");
         }
 
+        rateLimitEnabled = config.getBoolean("rate-limit.enabled", true);
+        rateLimitMaxMessages = config.getInt("rate-limit.max-messages", 9);
+        rateLimitTimeWindow = config.getInt("rate-limit.time-window", 5);
+
         similarityEnabled = config.getBoolean("similarity.enabled", true);
         similarityThreshold = config.getDouble("similarity.threshold", 0.9);
         recentMessagesToCheck = config.getInt("similarity.recent-messages-to-check", 15);
-        similarityTimeWindow = config.getInt("similarity.time-window", 20);
+        similarityTimeWindow = config.getInt("similarity.time-window", 80);
         repetitionThreshold = config.getInt("similarity.repetition-threshold", 4);
 
         timeoutDurations.clear();
@@ -95,12 +102,11 @@ public final class StopSpam extends JavaPlugin implements Listener {
     }
 
     private void scheduleCleanupTask() {
-        // Regular cleanup (every 4 hours)
-        long hourlyCleanupInterval = 20L * 60 * 60 * 4; // Every 4 hours (in ticks)
+        long hourlyCleanupInterval = 20L * 60 * 60 * 4; // Every 4 hours (in ticks).
         getServer().getScheduler().runTaskTimer(this, () -> {
             long currentTime = System.currentTimeMillis();
 
-            // Remove expired timeouts
+            // Remove expired timeouts.
             timeoutUntil.entrySet().removeIf(entry -> currentTime > entry.getValue());
 
             // Remove old violation counts (older than 4 hours)
@@ -132,7 +138,7 @@ public final class StopSpam extends JavaPlugin implements Listener {
         if (command.getName().equalsIgnoreCase("stopspam")) {
             if (args.length == 1 && args[0].equalsIgnoreCase("reload")) {
                 if (!sender.hasPermission("stopspam.admin")) {
-                    sender.sendMessage(Component.text("You don't have permission to use this command.",
+                    sender.sendMessage(Component.text("You don't have permission to use StopSpam.",
                             NamedTextColor.RED));
                     return true;
                 }
@@ -205,7 +211,7 @@ public final class StopSpam extends JavaPlugin implements Listener {
         UUID playerId = player.getUniqueId();
         long currentTime = System.currentTimeMillis();
 
-        // Extract message content as string
+        // Extract message content as string.
         String messageContent = "";
         if (event.message() instanceof TextComponent textComponent) {
             messageContent = textComponent.content();
@@ -233,22 +239,42 @@ public final class StopSpam extends JavaPlugin implements Listener {
 
         LinkedList<MessageEntry> playerMessages = recentMessages.get(playerId);
 
-        // Clean up old messages beyond time window
+        // Clean up old messages beyond time window.
         long expiryTime = currentTime - (similarityTimeWindow * 1000L);
         playerMessages.removeIf(entry -> entry.getTimestamp() < expiryTime);
 
-        // Check for message similarity if enabled
+        if (rateLimitEnabled) {
+            long rateLimitExpiryTime = currentTime - (rateLimitTimeWindow * 1000L);
+
+            // Count messages within the rate limit time window (including the current message).
+            int messagesInWindow = 1;
+            for (MessageEntry entry : playerMessages) {
+                if (entry.getTimestamp() > rateLimitExpiryTime) {
+                    messagesInWindow++;
+                }
+            }
+
+            if (messagesInWindow > rateLimitMaxMessages) {
+                event.setCancelled(true);
+                String randomWarning = warningMessages.get(random.nextInt(warningMessages.size()));
+                player.sendMessage(Component.text(randomWarning, NamedTextColor.RED));
+
+                applyViolation(player, playerId, currentTime, "sending messages too quickly");
+                return;
+            }
+        }
+
         if (similarityEnabled && !playerMessages.isEmpty()) {
             Map<String, Integer> similarityGroups = new HashMap<>();
 
-            // First, group current message with similar ones
+            // First, group current message with similar ones.
             similarityGroups.put(messageContent, 1);
 
-            // Check each recent message for similarity
+            // Check each recent message for similarity.
             for (MessageEntry entry : playerMessages) {
                 String content = entry.getContent();
 
-                // For each existing group, check if this message is similar
+                // For each existing group, check if this message is similar.
                 boolean added = false;
                 for (String groupKey : new ArrayList<>(similarityGroups.keySet())) {
                     if (calculateSimilarity(content, groupKey) >= similarityThreshold) {
@@ -259,13 +285,13 @@ public final class StopSpam extends JavaPlugin implements Listener {
                     }
                 }
 
-                // If not added to any group, create a new one
+                // If not added to any group, create a new one.
                 if (!added) {
                     similarityGroups.put(content, 1);
                 }
             }
 
-            // Check if any group exceeds the repetition threshold
+            // Check if any group exceeds the repetition threshold.
             boolean isSpam = false;
             for (Integer count : similarityGroups.values()) {
                 if (count >= repetitionThreshold) {
@@ -285,7 +311,6 @@ public final class StopSpam extends JavaPlugin implements Listener {
             }
         }
 
-        // Message cooldown check
         if (lastMessageTime.containsKey(playerId)) {
             long timeSinceLastMessage = currentTime - lastMessageTime.get(playerId);
             if (timeSinceLastMessage < messageCooldown) {
@@ -299,10 +324,8 @@ public final class StopSpam extends JavaPlugin implements Listener {
             }
         }
 
-        // Update last message time and add to recent messages
+        // Update last message time and add to recent messages.
         lastMessageTime.put(playerId, currentTime);
-
-        // Add new message to the list
         playerMessages.addFirst(new MessageEntry(messageContent, currentTime));
 
         // Keep only the most recent N messages
