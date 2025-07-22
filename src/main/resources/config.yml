@@ -15,8 +15,8 @@ rate-limit:
 similarity:
   enabled: true
   # Threshold (0.0-1.0) - higher means more similar messages will be blocked
-  # 0.9 means 90% similar content will trigger spam detection
-  threshold: 0.9
+  # 0.85 means 85% similar content will trigger spam detection
+  threshold: 0.85
   # Number of recent messages to check for similarity
   recent-messages-to-check: 15
   # Only check messages within this time window (in seconds)

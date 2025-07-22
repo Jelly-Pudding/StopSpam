@@ -10,6 +10,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
@@ -205,34 +206,39 @@ public final class StopSpam extends JavaPlugin implements Listener {
         player.sendMessage(Component.text(message, NamedTextColor.RED));
     }
 
-    @EventHandler(priority = org.bukkit.event.EventPriority.LOWEST)
-    public void onPlayerChat(AsyncChatEvent event) {
-        Player player = event.getPlayer();
-        UUID playerId = player.getUniqueId();
-        long currentTime = System.currentTimeMillis();
-
-        // Extract message content as string.
-        String messageContent = "";
-        if (event.message() instanceof TextComponent textComponent) {
-            messageContent = textComponent.content();
-        } else {
-            messageContent = event.message().toString();
-        }
-
-        // Check timeout logic
+    private boolean checkTimeout(Player player, UUID playerId, long currentTime) {
         if (timeoutUntil.containsKey(playerId)) {
             long timeoutEnd = timeoutUntil.get(playerId);
             if (currentTime < timeoutEnd) {
                 long remainingSeconds = (timeoutEnd - currentTime) / 1000;
                 player.sendMessage(Component.text("You are muted for " + remainingSeconds + " more seconds.",
                         NamedTextColor.RED));
-                event.setCancelled(true);
-                return;
+                return true;
             } else {
                 timeoutUntil.remove(playerId);
             }
         }
+        return false;
+    }
 
+    private String extractMessageFromCommand(String command) {
+        String lowerCommand = command.toLowerCase();
+
+        if (lowerCommand.startsWith("/me ")) {
+            return command.substring(4);
+        }
+
+        if (lowerCommand.startsWith("/msg ") || lowerCommand.startsWith("/tell ") || lowerCommand.startsWith("/w ")) {
+            String[] parts = command.split(" ", 3);
+            if (parts.length >= 3) {
+                return parts[2];
+            }
+        }
+
+        return null;
+    }
+
+    private boolean checkSpamAndApplyViolation(Player player, UUID playerId, String messageContent, long currentTime, String source) {
         if (!recentMessages.containsKey(playerId)) {
             recentMessages.put(playerId, new LinkedList<>());
         }
@@ -255,12 +261,11 @@ public final class StopSpam extends JavaPlugin implements Listener {
             }
 
             if (messagesInWindow > rateLimitMaxMessages) {
-                event.setCancelled(true);
                 String randomWarning = warningMessages.get(random.nextInt(warningMessages.size()));
                 player.sendMessage(Component.text(randomWarning, NamedTextColor.RED));
 
-                applyViolation(player, playerId, currentTime, "sending messages too quickly");
-                return;
+                applyViolation(player, playerId, currentTime, "sending " + source + " too quickly");
+                return true;
             }
         }
 
@@ -301,26 +306,23 @@ public final class StopSpam extends JavaPlugin implements Listener {
             }
 
             if (isSpam) {
-                event.setCancelled(true);
                 String randomWarning = warningMessages.get(random.nextInt(warningMessages.size()));
                 player.sendMessage(Component.text(randomWarning, NamedTextColor.RED));
 
-                // Apply timeout
-                applyViolation(player, playerId, currentTime, "repetitive messages");
-                return;
+                applyViolation(player, playerId, currentTime, "repetitive " + source);
+                return true;
             }
         }
 
         if (lastMessageTime.containsKey(playerId)) {
             long timeSinceLastMessage = currentTime - lastMessageTime.get(playerId);
             if (timeSinceLastMessage < messageCooldown) {
-                event.setCancelled(true);
                 String randomWarning = warningMessages.get(random.nextInt(warningMessages.size()));
                 player.sendMessage(Component.text(randomWarning, NamedTextColor.RED));
 
                 // Apply timeout
                 applyViolation(player, playerId, currentTime, null);
-                return;
+                return true;
             }
         }
 
@@ -331,6 +333,50 @@ public final class StopSpam extends JavaPlugin implements Listener {
         // Keep only the most recent N messages
         while (playerMessages.size() > recentMessagesToCheck) {
             playerMessages.removeLast();
+        }
+
+        return false;
+    }
+
+    @EventHandler(priority = org.bukkit.event.EventPriority.LOWEST)
+    public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
+        Player player = event.getPlayer();
+        UUID playerId = player.getUniqueId();
+        long currentTime = System.currentTimeMillis();
+
+        String messageContent = extractMessageFromCommand(event.getMessage());
+        if (messageContent != null && !messageContent.trim().isEmpty()) {
+            if (checkTimeout(player, playerId, currentTime)) {
+                event.setCancelled(true);
+                return;
+            }
+
+            if (checkSpamAndApplyViolation(player, playerId, messageContent, currentTime, "commands")) {
+                event.setCancelled(true);
+            }
+        }
+    }
+
+    @EventHandler(priority = org.bukkit.event.EventPriority.LOWEST)
+    public void onPlayerChat(AsyncChatEvent event) {
+        Player player = event.getPlayer();
+        UUID playerId = player.getUniqueId();
+        long currentTime = System.currentTimeMillis();
+
+        String messageContent = "";
+        if (event.message() instanceof TextComponent textComponent) {
+            messageContent = textComponent.content();
+        } else {
+            messageContent = event.message().toString();
+        }
+
+        if (checkTimeout(player, playerId, currentTime)) {
+            event.setCancelled(true);
+            return;
+        }
+
+        if (checkSpamAndApplyViolation(player, playerId, messageContent, currentTime, "messages")) {
+            event.setCancelled(true);
         }
     }
 }
