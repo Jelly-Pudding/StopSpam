@@ -63,6 +63,10 @@ public final class StopSpam extends JavaPlugin implements Listener {
 
         scheduleCleanupTask();
 
+        // Initialise bStats
+        int pluginId = 27566;
+        new Metrics(this, pluginId);
+
         getLogger().info("StopSpam has been enabled.");
     }
 
