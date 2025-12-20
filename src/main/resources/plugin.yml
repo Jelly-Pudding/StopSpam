@@ -1,5 +1,5 @@
 name: StopSpam
-version: '1.5'
+version: '1.6'
 main: com.jellypudding.stopSpam.StopSpam
 api-version: '1.21'
 description: "Prevents chat spam by rate limiting messages with escalating timeouts"
