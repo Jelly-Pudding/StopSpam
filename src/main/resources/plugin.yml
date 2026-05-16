@@ -1,7 +1,7 @@
 name: StopSpam
-version: '1.6'
+version: '${version}'
 main: com.jellypudding.stopSpam.StopSpam
-api-version: '1.21'
+api-version: '26.1.2'
 description: "Prevents chat spam by rate limiting messages with escalating timeouts"
 author: AlphaAlex115
 website: www.minecraftoffline.net

@@ -1,5 +1,5 @@
 # StopSpam
-**StopSpam** is a Minecraft Paper 1.21.11 plugin that prevents chat spam by implementing message cooldowns, rate limiting, similarity detection, and escalating timeout punishments for repeat offenders.
+**StopSpam** is a Minecraft Paper 26.1.2 plugin that prevents chat spam by implementing message cooldowns, rate limiting, similarity detection, and escalating timeout punishments for repeat offenders. Although it was custom built for [minecraftoffline.net](https://www.minecraftoffline.net), it can be used by any server.
 
 ## Installation
 1. Download the latest release [here](https://github.com/Jelly-Pudding/stopspam/releases/latest).

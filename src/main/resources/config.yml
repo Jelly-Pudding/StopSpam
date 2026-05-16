@@ -18,7 +18,7 @@ similarity:
   # 0.85 means 85% similar content will trigger spam detection
   threshold: 0.85
   # Number of recent messages to check for similarity
-  recent-messages-to-check: 15
+  recent-messages-to-check: 64
   # Only check messages within this time window (in seconds)
   time-window: 80
   # Number of similar messages required before triggering spam detection
