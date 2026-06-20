@@ -22,17 +22,21 @@ public class SpamDetector {
         this.config = config;
     }
 
-    /**
-     * Extracts the text content from spam-relevant commands (/me, /msg, /tell, /w).
-     * Returns null for commands that don't carry chat-like content.
-     */
     public String extractMessageFromCommand(String command) {
         String lower = command.toLowerCase();
 
+        // Emote and reply commands: everything after the command word is the message.
         if (lower.startsWith("/me ")) {
             return command.substring(4);
         }
-        if (lower.startsWith("/msg ") || lower.startsWith("/tell ") || lower.startsWith("/w ")) {
+        if (lower.startsWith("/r ")) {
+            return command.substring(3);
+        }
+        if (lower.startsWith("/reply ")) {
+            return command.substring(7);
+        }
+        // Private message commands: skip the target word, the rest is the message.
+        if (lower.startsWith("/msg ") || lower.startsWith("/tell ") || lower.startsWith("/w ") || lower.startsWith("/t ")) {
             String[] parts = command.split(" ", 3);
             if (parts.length >= 3) {
                 return parts[2];
